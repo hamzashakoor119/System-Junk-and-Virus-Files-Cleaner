@@ -1,66 +1,60 @@
 @echo off
-setlocal enabledelayedexpansion
+echo ===========================================
+echo      ADVANCED WINDOWS CLEANUP TOOL
+echo ===========================================
 
-:: [STRATEGY] Auto-Admin Elevation Check
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [ERROR] Please Run as Administrator!
-    pause
-    exit /b
+echo Cleaning System Junk Files...
+echo -------------------------------
+
+:: Delete Temp Files
+del /s /f /q %temp%\*
+del /s /f /q C:\Windows\Temp\*
+del /s /f /q C:\Windows\Prefetch\*
+
+:: Clear Thumbnail Cache
+echo Clearing Thumbnail Cache...
+del /s /f /q "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache*.db"
+
+:: Flush DNS
+ipconfig /flushdns
+
+:: Clean Software Distribution (Windows Update Cache)
+echo Cleaning SoftwareDistribution...
+net stop wuauserv
+net stop bits
+del /s /f /q C:\Windows\SoftwareDistribution\*
+net start wuauserv
+net start bits
+
+:: Clear Delivery Optimization
+echo Clearing Delivery Optimization Cache...
+del /s /f /q C:\Windows\SoftwareDistribution\DeliveryOptimization\*
+
+:: Clear Windows Store Cache
+wsreset.exe
+
+:: Empty Recycle Bin
+PowerShell.exe -Command "Clear-RecycleBin -Confirm:$false"
+
+:: Clear Windows Error Reports
+echo Cleaning Windows Error Reports...
+del /s /f /q C:\ProgramData\Microsoft\Windows\WER\*
+
+:: Clear old Windows logs
+echo Clearing Windows Log Files...
+for /f "tokens=*" %%G in ('wevtutil el') do wevtutil cl "%%G"
+
+:: Remove orphaned shortcuts from Desktop
+echo Removing broken shortcuts...
+for %%i in ("%USERPROFILE%\Desktop\*.lnk") do (
+    if not exist "%%~fi" del "%%i"
 )
 
-title Advanced System Optimizer & Network Fixer
-color 0B
+:: Refresh Superfetch
+net stop superfetch
+net start superfetch
 
-echo ============================================================
-echo      ADVANCED WINDOWS CLEANUP & NETWORK STABILITY TOOL
-echo ============================================================
-echo.
-
-:: 1. Network & Internet Stability Fix (New Addition)
-echo [+] Fixing Network Stability & Resetting Stack...
-ipconfig /release >nul 2>&1
-ipconfig /renew >nul 2>&1
-ipconfig /flushdns >nul 2>&1
-netsh winsock reset >nul 2>&1
-netsh int ip reset >nul 2>&1
-netsh interface set interface name="Wi-Fi" admin=disabled >nul 2>&1
-netsh interface set interface name="Wi-Fi" admin=enabled >nul 2>&1
-netsh interface set interface name="Ethernet" admin=disabled >nul 2>&1
-netsh interface set interface name="Ethernet" admin=enabled >nul 2>&1
-echo [✔] Network Stack Reset Complete.
-
-:: 2. System Junk Cleaning
-echo [+] Cleaning System Junk & Temp Files...
-[cite_start]del /s /f /q %temp%\* [cite: 1]
-[cite_start]del /s /f /q C:\Windows\Temp\* [cite: 1]
-[cite_start]del /s /f /q C:\Windows\Prefetch\* [cite: 1]
-
-:: 3. Thumbnail Cache
-echo [+] Clearing Thumbnail Cache...
-[cite_start]del /s /f /q "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache*.db" [cite: 1]
-
-:: 4. Windows Update Cache
-echo [+] Cleaning SoftwareDistribution (Update Cache)...
-[cite_start]net stop wuauserv >nul 2>&1 [cite: 1]
-[cite_start]net stop bits >nul 2>&1 [cite: 1]
-[cite_start]del /s /f /q C:\Windows\SoftwareDistribution\* [cite: 1]
-[cite_start]net start wuauserv >nul 2>&1 [cite: 1]
-[cite_start]net start bits >nul 2>&1 [cite: 1]
-
-:: 5. Power Cleaning (Recycle Bin & Logs)
-echo [+] Emptying Recycle Bin...
-[cite_start]PowerShell.exe -Command "Clear-RecycleBin -Confirm:$false" [cite: 1]
-echo [+] Cleaning System Logs...
-[cite_start]for /f "tokens=*" %%G in ('wevtutil el') do wevtutil cl "%%G" [cite: 2]
-
-:: 6. Service Refresh
-echo [+] Refreshing Superfetch (SysMain)...
-[cite_start]net stop sysmain >nul 2>&1 [cite: 2]
-[cite_start]net start sysmain >nul 2>&1 [cite: 2]
-
-echo.
-echo ------------------------------------------------------------
-[cite_start]echo SYSTEM CLEANED & NETWORK STABILIZED SUCCESSFULLY ✔ [cite: 3]
-echo ------------------------------------------------------------
+echo --------------------------------------
+echo DONE! SYSTEM CLEANED SUCCESSFULLY ✔
+echo --------------------------------------
 pause
